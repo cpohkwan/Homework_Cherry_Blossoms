@@ -30,6 +30,7 @@ pip install xlrd
 
 df = pd.read_excel("KyotoFullFlower7.xls")
 df.head()
+# Doesn't look right
 
 
 # ## 2. Read in the file using pandas CORRECTLY, and look at the first five rows
@@ -53,11 +54,22 @@ df.head()
 df.tail(5)
 
 
-# In[6]:
+# In[11]:
 
+
+# Renaming columns first
 
 df.columns = df.columns.str.lower().str.replace(" ", "_")
-df
+df.columns = df.columns.str.replace("-", "_")
+df.columns = df.columns.str.replace("(", "")
+df.columns = df.columns.str.replace(")", "")
+df.head()
+
+
+# In[12]:
+
+
+df.dtypes
 
 
 # ## 4. Add some NaN values
@@ -66,7 +78,7 @@ df
 # 
 # * *Tip: it's another open with reading in the file!*
 
-# In[7]:
+# In[13]:
 
 
 import numpy as np
@@ -79,7 +91,7 @@ df.reference_name
 # 
 # If the first result is `"-"`, you need to redo the last question.
 
-# In[8]:
+# In[14]:
 
 
 df.reference_name.value_counts()
@@ -89,15 +101,16 @@ df.reference_name.value_counts()
 
 # ## 6. Filter the list to only include columns where the `Full-flowering date (DOY)` is not missing
 
-# In[9]:
+# In[16]:
 
 
-df = df.dropna(subset=['full-flowering_date_(doy)'])
+df = df.dropna(subset=['full_flowering_date_doy'])
+df.head()
 
 
 # ## 6.5 Confirm you now have 827 rows
 
-# In[10]:
+# In[17]:
 
 
 df.shape
@@ -105,60 +118,54 @@ df.shape
 
 # ## 7. Make a histogram of the full-flowering date
 
-# In[11]:
+# In[19]:
 
 
-df.hist(column='full-flowering_date_(doy)')
+df.hist(column='full_flowering_date_doy')
 
 
 # ## 8. Make another histogram of the full-flowering date, but with 39 bins instead of 10
 
-# In[12]:
+# In[20]:
 
 
-df.hist(column='full-flowering_date_(doy)', bins=39)
+df.hist(column='full_flowering_date_doy', bins=39)
 
 
 # ## 9. What's the average number of days it takes for the flowers to blossom? And how many records do we have?
 # 
 # Answer these both with one line of code.
 
-# In[13]:
+# In[22]:
 
 
-df['full-flowering_date_(doy)'].describe()
-# We have 827 records. The average number of days is 104.5.
+df['full_flowering_date_doy'].describe()
+# We have 827 records. The average number of days is 104.5. The median is 105. 
 
 
 # ## 10. What's the average days into the year cherry flowers normally blossomed before 1900?
 # 
 # 
 
-# In[14]:
+# In[23]:
 
 
-df.dtypes
-
-
-# In[15]:
-
-
-df.query("ad < 1900")['full-flowering_date_(doy)'].mean()
+df.query("ad < 1900").full_flowering_date_doy.mean()
 
 
 # ## 11. How about after 1900?
 
-# In[16]:
+# In[24]:
 
 
-df.query("ad >= 1900")['full-flowering_date_(doy)'].mean()
+df.query("ad >= 1900").full_flowering_date_doy.mean()
 
 
 # ## 12. How many times was our data from a title in Japanese poetry?
 # 
 # You'll need to read the documentation inside of the Excel file.
 
-# In[17]:
+# In[25]:
 
 
 # Data type code is 4 if title is in Japanese poetry
@@ -169,7 +176,7 @@ df.data_type_code.value_counts()
 
 # ## 13. Display the rows where our data was from a title in Japanese poetry
 
-# In[18]:
+# In[26]:
 
 
 df[df["data_type_code"] == 4]
@@ -177,10 +184,10 @@ df[df["data_type_code"] == 4]
 
 # ## 14. Graph the full-flowering date (DOY) over time
 
-# In[19]:
+# In[27]:
 
 
-df["full-flowering_date_(doy)"].plot(x="ad", y="full-flowering_date_(doy)")
+df.plot(x="ad", y="full_flowering_date_doy")
 
 
 # ## 15. Smooth out the graph
@@ -191,33 +198,32 @@ df["full-flowering_date_(doy)"].plot(x="ad", y="full-flowering_date_(doy)")
 # 
 # (We're only looking at the final 5)
 
-# In[20]:
+# In[29]:
 
 
-df.rolling(10, on='ad', min_periods=5)['full-flowering_date_(doy)'].mean().tail()
+df.rolling(10, on='ad', min_periods=5)['full_flowering_date_doy'].mean().tail()
 
 
 # Use the code above to create a new column called `rolling_date` in our dataset. It should be the 20-year rolling average of the flowering date. Then plot it, with the year on the x axis and the day of the year on the y axis.
 # 
 # Try adding `ylim=(80, 120)` to your `.plot` command to make things look a little less dire.
 
-# In[21]:
+# In[30]:
 
 
-df["rolling_date"] = df.rolling(20, on='ad', min_periods=5)['full-flowering_date_(doy)'].mean()
+df["rolling_date"] = df.rolling(20, on='ad', min_periods=5)['full_flowering_date_doy'].mean()
 
 
-# In[22]:
+# In[31]:
 
 
 df.tail()
 
 
-# In[23]:
+# In[32]:
 
 
-df.rolling_date.plot(kind="line", x="ad", y="rolling_date", ylim=(80, 120))
-# x-axis is reflecting the index instead of 'ad'
+df.plot(x="ad", y="rolling_date", ylim=(80, 120))
 
 
 # ## 16. Add a month column
@@ -244,28 +250,22 @@ df.rolling_date.plot(kind="line", x="ad", y="rolling_date", ylim=(80, 120))
 # * `errors='coerce'` will return `NaN` for missing values. By default it just yells "I don't know what to do!!!"
 # * And remember how we used `df.date_column.dt.month` to get the number of the month? For the name, you use `dt.strftime` (string-formatted-time), and pass it [the same codes](https://strftime.org/) to tell it what to do. For example, `df.date_column.dt.strftime("%Y-%m-%d")` would give you `"2020-04-09"`.
 
-# In[24]:
-
-
-df = df.rename(columns = {'full-flowering_date':'full_flowering_date'})
-
-
-# In[25]:
+# In[38]:
 
 
 df['full_flowering_datetime'] = pd.to_datetime(df.full_flowering_date, format='%m%d', errors="coerce")
 
 
-# In[26]:
+# In[39]:
 
 
 df['month'] = df.full_flowering_datetime.dt.month_name()
-df.head()
+df.tail()
 
 
 # ## 17. Using your new column, how many blossomings happened in each month?
 
-# In[27]:
+# In[40]:
 
 
 df.month.value_counts()
@@ -273,7 +273,7 @@ df.month.value_counts()
 
 # ## 18. Make a bar graph of how many blossomings happened in each month.
 
-# In[28]:
+# In[41]:
 
 
 df.month.value_counts().sort_values().plot(kind="barh", title="When do Cherry Blossoms Bloom?")
@@ -285,11 +285,11 @@ df.month.value_counts().sort_values().plot(kind="barh", title="When do Cherry Bl
 # 
 # *Tip: If you didn't drop the rows missing full-flowering dates earlier, it will yell at you about missing data. Go back up and fix Number 6!*
 
-# In[29]:
+# In[43]:
 
 
 df["day_of_month"] = df.full_flowering_datetime.dt.strftime("%d")
-df.head()
+df.tail()
 
 
 # ## 20. Adding a date column
@@ -298,46 +298,42 @@ df.head()
 # 
 # * Instead of using the two existing columns, you could learn to use `.dt.strftime` as mentioned above.
 
-# In[30]:
+# In[45]:
 
 
 df["date"] = df.full_flowering_datetime.dt.strftime("%B %d")
-df.head()
+df["date"]
 
 
 # ## 21. What day of the week do cherry blossoms like to blossom on?
 # 
 # Do they get the weekends off?
 
-# In[82]:
+# In[55]:
 
 
-# need a new "year" column as string
+# Need a new "year" column as string before combining ad and date 
 
-df["new_date"] = df["ad"].astype(str) + " " + df["date"]
+df["year"] = df.ad.astype(str)
+
+df["new_date"] = df["year"] + " " + df["date"]
 df["new_date"]
 
 
-# In[86]:
-
-
-df['new_date'] = pd.to_datetime(df['new_date'], format='%Y %B,%d')
-
-
-# In[87]:
+# In[60]:
 
 
 df["new_date"] = pd.to_datetime(df['new_date'], format='%Y %B %d', errors="coerce")
 df["new_date"]
-# Can't convert the years before 1000 to datetime format
+# Haven't figured out how to convert the years before 1000 to datetime format 
 
 
-# In[95]:
+# In[61]:
 
 
 df.new_date.dt.day_name().value_counts()
 
-# Their favourite day to bloom seems to be Sunday. They also seem to have Monday blues. 
+# Their favourite day to bloom (after year 1000) was Sunday, followed closely by Friday. They also seemed to have Monday blues. 
 
 
 # # YOU ARE DONE.
